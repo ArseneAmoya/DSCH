@@ -171,41 +171,42 @@ def main():
 
     dummy_logger_id = None
     rst = []
-    for dataset in ["cifar", "nuswide", "flickr", "coco"]:
-        print(f"processing dataset: {dataset}")
-        args.dataset = dataset
-        args.n_classes = get_class_num(dataset)
-        args.topk = get_topk(dataset)
+    #for dataset in ["cifar", "nuswide", "flickr", "coco"]:
+    dataset = args.dataset
+    print(f"processing dataset: {dataset}")
+    args.dataset = dataset
+    args.n_classes = get_class_num(dataset)
+    args.topk = get_topk(dataset)
 
-        train_loader, query_loader, dbase_loader = prepare_loaders(args, build_loader)
+    train_loader, query_loader, dbase_loader = prepare_loaders(args, build_loader)
 
-        # for hash_bit in [16, 32, 64, 128]:
-        for hash_bit in [32]:
-            print(f"processing hash-bit: {hash_bit}")
-            seed_everything()
-            args.n_bits = hash_bit
+    # for hash_bit in [16, 32, 64, 128]:
+    for hash_bit in [64]:
+        print(f"processing hash-bit: {hash_bit}")
+        seed_everything()
+        args.n_bits = hash_bit
 
-            args.save_dir = f"./output/{args.backbone}/{dataset}/{hash_bit}"
-            os.makedirs(args.save_dir, exist_ok=True)
-            if any(x.endswith(".pkl") for x in os.listdir(args.save_dir)):
-                # raise Exception(f"*.pkl exists in {args.save_dir}")
-                print(f"*.pkl exists in {args.save_dir}, will pass")
-                continue
+        args.save_dir = f"./output/{args.backbone}/{dataset}/{hash_bit}"
+        os.makedirs(args.save_dir, exist_ok=True)
+        if any(x.endswith(".pkl") for x in os.listdir(args.save_dir)):
+            # raise Exception(f"*.pkl exists in {args.save_dir}")
+            print(f"*.pkl exists in {args.save_dir}, will pass")
+            continue
 
-            if dummy_logger_id is not None:
-                logger.remove(dummy_logger_id)
-            dummy_logger_id = logger.add(f"{args.save_dir}/train.log", mode="w", level="INFO")
+        if dummy_logger_id is not None:
+            logger.remove(dummy_logger_id)
+        dummy_logger_id = logger.add(f"{args.save_dir}/train.log", mode="w", level="INFO")
 
-            with open(f"{args.save_dir}/config.json", "w") as f:
-                json.dump(
-                    vars(args),
-                    f,
-                    indent=4,
-                    sort_keys=True,
-                    default=lambda o: o if type(o) in [bool, int, float, str] else str(type(o)),
-                )
-            best_epoch, best_map = train(args, train_loader, query_loader, dbase_loader)
-            rst.append({"dataset": dataset, "hash_bit": hash_bit, "best_epoch": best_epoch, "best_map": best_map})
+        with open(f"{args.save_dir}/config.json", "w") as f:
+            json.dump(
+                vars(args),
+                f,
+                indent=4,
+                sort_keys=True,
+                default=lambda o: o if type(o) in [bool, int, float, str] else str(type(o)),
+            )
+        best_epoch, best_map = train(args, train_loader, query_loader, dbase_loader)
+        rst.append({"dataset": dataset, "hash_bit": hash_bit, "best_epoch": best_epoch, "best_map": best_map})
     # for x in rst:
     #     print(
     #         f"[dataset:{x['dataset']}][bits:{x['hash_bit']}][best-epoch:{x['best_epoch']}][best-mAP:{x['best_map']:.3f}]"
